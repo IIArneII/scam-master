@@ -28,6 +28,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("init kafka service: ", err)
 	}
+	defer kafkaService.Close()
 	l.Info("connected kafka")
 
 	services := services.NewServices(l, kafkaService)

@@ -2,8 +2,8 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
+	"strings"
 
 	"github.com/caarlos0/env/v9"
 	"github.com/joho/godotenv"
@@ -20,10 +20,7 @@ type (
 	}
 
 	KafkaConfig struct {
-		Port     int    `env:"KAFKA_PORT" envDefault:"8090"`
-		Host     string `env:"KAFKA_HOST" envDefault:"localhost"`
-		User     string `env:"KAFKA_USER" envDefault:"admin"`
-		Password string `env:"KAFKA_PASSWORD" envDefault:"password"`
+		Brokers string `env:"KAFKA_BROKERS" envDefault:"localhost:9092"`
 	}
 )
 
@@ -44,6 +41,17 @@ func NewConfig(configFiles ...string) (Config, error) {
 	return c, nil
 }
 
-func (c KafkaConfig) DSN() string {
-	return fmt.Sprintf("amqp://%s:%s@%s:%d/", c.User, c.Password, c.Host, c.Port)
+func (c KafkaConfig) GetBrokers() []string {
+	brokers := strings.ReplaceAll(c.Brokers, " ", "")
+
+	brokersList := strings.Split(brokers, ",")
+	var nonEmptyBrokersList []string
+
+	for _, str := range brokersList {
+		if str != "" {
+			nonEmptyBrokersList = append(nonEmptyBrokersList, str)
+		}
+	}
+
+	return nonEmptyBrokersList
 }
