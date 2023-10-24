@@ -13,6 +13,7 @@ class ForbiddenError(ServiceError):
 
 NOT_FOUND_ERR = NotFoundError('Not found')
 FORBIDDEN_ERR = NotFoundError('Forbidden')
+BAD_REQUEST_ERR = BadRequestError('Bad request')
 
-WRONG_PASS_ERR = BadRequestError('Wrong password')
-CREDENTIALS_ERR = BadRequestError('Could not validate credentials')
+UNKNOWN_BANK_ERR = BadRequestError('Unknown bank')
+TRANSACTION_ALREADY_EXISTS = ServiceError('Transaction already exists')

@@ -1,5 +1,5 @@
 from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
-from dependency_injector.providers import Factory, Singleton, Configuration
+from dependency_injector.providers import Factory, Configuration
 
 from config import Config
 from scam_master.services.transactions import TransactionsService
