@@ -1,42 +1,41 @@
-from scam_master.banks.interface import BankRepositoryInterface
-from scam_master.services.browsermanager import Browser, start_browser, get_browser
-from scam_master.services.helpers.banks import get_bank_repo
+from scam_master.infrastructure.browser_manager import BrowserManager, Browser
+from scam_master.services.helpers.banks import get_bank_transfer, get_bank_config
 from scam_master.services.helpers.try_except import try_except
+from scam_master.services.models.errors import NOT_FOUND_ERR
 from scam_master.services.models.transactions import Transaction, Confirm
+from config import BanksConfig
 
 
 class TransactionsService:
-    transactions: dict[str, Transaction] = {}
-    
-    def __init__(self) -> None:
-        ...
+    def __init__(self, browser_manager: BrowserManager, banks_config: dict) -> None:
+        self._browser_manager: BrowserManager = browser_manager
+        self._banks_config: BanksConfig = BanksConfig(banks_config)
     
     @try_except
     async def init(self, model: Transaction) -> None:
-        br: Browser = None
         try:
-            br: Browser = await start_browser(model)
-            repo: BankRepositoryInterface = get_bank_repo(model.bank_gateway)
+            config = get_bank_config(self._banks_config, model.bank_gateway)
+
+            browser = await self._browser_manager.start(model, config.TIMEOUT)
             
-            await repo.fill_out_transfer_form(br.page, model.sender_card, model.recipient_card_number, model.amount)
+            transfer = get_bank_transfer(model.bank_gateway)
+            await transfer.fill_out_transfer_form(browser.page, config.URL, model.sender_card, model.recipient_card_number, model.amount)
             
             # kafka.send_message
         except Exception:
-            if br:
-                await br.browser.close()
+            await self._browser_manager.stop(model.transaction_id)
             raise
-        
+
     @try_except
     async def confirm(self, model: Confirm) -> None:
         br: Browser = None
         try:
-            br = await get_browser(model.transaction_id)
-            repo: BankRepositoryInterface = get_bank_repo(br.transaction.bank_gateway)
+            br = await self._browser_manager.get(model.transaction_id)
             
-            await repo.confirm_transfer(br.page, model.confirmation_code)
+            transfer = get_bank_transfer(br.transaction.sender_bank)
+            await transfer.confirm_transfer(br.page, model.confirmation_code)
             
             # kafka.send_message
         except Exception:
-            if br:
-                await br.browser.close()
+            await self._browser_manager.stop(model.transaction_id)
             raise
