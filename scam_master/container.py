@@ -1,7 +1,8 @@
 from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
-from dependency_injector.providers import Factory, Configuration
+from dependency_injector.providers import Singleton, Factory, Configuration
 
 from config import Config
+from scam_master.infrastructure.browser_manager import BrowserManager
 from scam_master.services.transactions import TransactionsService
 
 
@@ -12,4 +13,6 @@ class Container(DeclarativeContainer):
         '.controllers.helpers.services_providers',
     ])
 
-    transactions_service: TransactionsService = Factory(TransactionsService)
+    browser_manager: BrowserManager = Singleton(BrowserManager)
+
+    transactions_service: TransactionsService = Factory(TransactionsService, browser_manager=browser_manager, banks_config=config.banks)

@@ -1,5 +1,16 @@
 from pydantic_settings import BaseSettings
-from scam_master.services.enums.base import StrEnum
+from enum import Enum
+
+
+class StrEnum(str, Enum):
+    @classmethod
+    def _missing_(cls, value):
+        value = value.upper()
+        for member in cls:
+            if member.upper() == value:
+                return member
+        return None
+
 
 class APIConfig(BaseSettings):
     VERSION: str = '1.0.0'
@@ -41,18 +52,26 @@ class LogConfig(BaseSettings):
         use_enum_values = True
         env_file = '.env'
 
-class TinkoffConfig(BaseSettings):
+
+class BankConfig(BaseSettings):
+    URL: str
+    TIMEOUT: int
+
+class TinkoffConfig(BankConfig):
     URL: str = 'https://www.tinkoff.ru/cardtocard/'
     TIMEOUT: int = 350
         
     class Config:
-        env_prefix = 'TINKOFF_'
+        env_prefix = 'BANK_TINKOFF_'
         env_file = '.env'
+
+
+class BanksConfig(BaseSettings):
+    tinkoff: TinkoffConfig = TinkoffConfig()
+
 
 class Config(BaseSettings):
     api: APIConfig = APIConfig()
     app: AppConfig = AppConfig()
     log: LogConfig = LogConfig()
-    tinkoff: TinkoffConfig = TinkoffConfig()
-
-config: Config = Config()
+    banks: BanksConfig = BanksConfig()
