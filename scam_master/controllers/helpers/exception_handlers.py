@@ -21,7 +21,7 @@ def bad_request_handler(request: Request, exc: BadRequestError) -> JSONResponse:
 def internal_server_error_handler(request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=Error(message=str(exc)).model_dump(),
+        content='Internal Server Error',
     )
 
 def http_error_handler(request: Request, exc: HTTPException) -> JSONResponse:

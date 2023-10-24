@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings
 from scam_master.services.enums.base import StrEnum
 
-
 class APIConfig(BaseSettings):
     VERSION: str = '1.0.0'
     TITLE: str = 'Scam Master API'
@@ -42,8 +41,18 @@ class LogConfig(BaseSettings):
         use_enum_values = True
         env_file = '.env'
 
+class TinkoffConfig(BaseSettings):
+    URL: str = 'https://www.tinkoff.ru/cardtocard/'
+    TIMEOUT: int = 350
+        
+    class Config:
+        env_prefix = 'TINKOFF_'
+        env_file = '.env'
 
 class Config(BaseSettings):
     api: APIConfig = APIConfig()
     app: AppConfig = AppConfig()
     log: LogConfig = LogConfig()
+    tinkoff: TinkoffConfig = TinkoffConfig()
+
+config: Config = Config()

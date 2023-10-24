@@ -1,8 +1,6 @@
 from config import Config, LogConfig
 from loguru import logger
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
-from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 
 
