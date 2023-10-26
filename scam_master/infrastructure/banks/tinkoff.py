@@ -2,9 +2,9 @@ import asyncio
 from pyppeteer.page import Page as PyppPage
 from loguru import logger
 
-from scam_master.banks.errors import UNKNOWN_TRANSFER_STATUS
-from scam_master.banks.interface import IBankTransfer
+from scam_master.infrastructure.banks.interface import IBankTransfer
 from scam_master.services.models.transactions import Card
+from scam_master.services.models.errors import UNKNOWN_TRANSFER_STATUS, BankError
 
 
 class TinkoffTransfer(IBankTransfer):
@@ -48,7 +48,7 @@ class TinkoffTransfer(IBankTransfer):
             await asyncio.sleep(2)
         
         except Exception as e:
-            logger.error(e)
+            logger.exception(e)
             raise UNKNOWN_TRANSFER_STATUS
 
     @staticmethod
@@ -58,10 +58,16 @@ class TinkoffTransfer(IBankTransfer):
             await page.type('input[name="password"]', sms_code)
             
             text = await TinkoffTransfer._check_transfer_status(page)
-            logger.info(text)
+            logger.info(f'Transfer status: {text}')
+
+            if 'Переведено' not in text:
+                raise UNKNOWN_TRANSFER_STATUS
         
+        except BankError:
+            raise
+
         except Exception as e:
-            logger.error(e)
+            logger.exception(e)
             raise UNKNOWN_TRANSFER_STATUS
     
     @staticmethod
@@ -75,7 +81,7 @@ class TinkoffTransfer(IBankTransfer):
                 return extracted_text
         
         except Exception as e:
-            logger.error(e)
+            logger.exception(e)
             raise UNKNOWN_TRANSFER_STATUS
 
     @staticmethod
