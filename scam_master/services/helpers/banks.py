@@ -1,7 +1,7 @@
 from typing import Type
 
-from scam_master.banks.interface import IBankTransfer
-from scam_master.banks.tinkoff import TinkoffTransfer
+from scam_master.infrastructure.banks.interface import IBankTransfer
+from scam_master.infrastructure.banks.tinkoff import TinkoffTransfer
 from scam_master.services.models.errors import UNKNOWN_BANK_ERR
 from scam_master.services.models.transactions import Bank
 from config import BanksConfig, BankConfig

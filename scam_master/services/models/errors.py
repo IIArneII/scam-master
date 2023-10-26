@@ -7,13 +7,11 @@ class NotFoundError(ServiceError):
 class BadRequestError(ServiceError):
     ...
 
-class ForbiddenError(ServiceError):
+class BankError(Exception):
     ...
 
 
-NOT_FOUND_ERR = NotFoundError('Not found')
-FORBIDDEN_ERR = NotFoundError('Forbidden')
-BAD_REQUEST_ERR = BadRequestError('Bad request')
-
+UNKNOWN_TRANSFER_STATUS = BankError('Unknown transfer status')
 UNKNOWN_BANK_ERR = BadRequestError('Unknown bank')
-TRANSACTION_ALREADY_EXISTS = ServiceError('Transaction already exists')
+TRANSACTION_ALREADY_EXISTS = BadRequestError('Transaction already exists')
+TRANSACTION_NOT_FOUND = NotFoundError('Transaction not found')

@@ -2,6 +2,7 @@ from config import Config, LogConfig
 from loguru import logger
 from fastapi import FastAPI
 from starlette.exceptions import HTTPException
+from contextlib import asynccontextmanager
 
 
 from scam_master.controllers.helpers.responses import INTERNAL_SERVER_ERROR
@@ -16,11 +17,19 @@ def create_app(config: Config):
 
     container = Container()
     container.config.from_dict(config.model_dump())
+    
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        kafka = container.kafka_service()
+        await kafka.start()
+        yield
+        await kafka.stop()
 
     global_api = FastAPI(
         debug=config.app.DEBUG,
         docs_url=None,
         redoc_url=None,
+        lifespan=lifespan
     )
     global_api.container = container
 

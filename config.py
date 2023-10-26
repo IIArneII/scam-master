@@ -18,7 +18,7 @@ class APIConfig(BaseSettings):
     SUMMARY: str | None = None
     DESCRIPTION: str = 'Bank transfer system API'
     PREFIX: str = '/api'
-    IS_VISIBLE: bool = False
+    IS_VISIBLE: bool = True
 
     class Config:
         env_prefix = 'API_'
@@ -53,9 +53,25 @@ class LogConfig(BaseSettings):
         env_file = '.env'
 
 
+class BrowserConfig(BaseSettings):
+    PATH: str = '/usr/bin/google-chrome-stable'
+    
+    class Config:
+        env_prefix = 'BROWSER_'
+        env_file = '.env'
+
+class KafkaConfig(BaseSettings):
+    BOOTSTRAP_SERVERS: str = 'scam_master_kafka:9092'
+
+    class Config:
+        env_prefix = 'KAFKA_'
+        env_file = '.env'
+
+
 class BankConfig(BaseSettings):
     URL: str
     TIMEOUT: int
+
 
 class TinkoffConfig(BankConfig):
     URL: str = 'https://www.tinkoff.ru/cardtocard/'
@@ -75,3 +91,5 @@ class Config(BaseSettings):
     app: AppConfig = AppConfig()
     log: LogConfig = LogConfig()
     banks: BanksConfig = BanksConfig()
+    kafka: KafkaConfig = KafkaConfig()
+    browser: BrowserConfig = BrowserConfig()

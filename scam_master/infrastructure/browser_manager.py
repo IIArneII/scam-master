@@ -2,10 +2,11 @@ from asyncio import Lock, get_event_loop, create_task
 from pyppeteer import launch
 from pyppeteer.page import Page as PyppPage
 from pyppeteer.browser import Browser as PyppBrowser
+from loguru import logger
 
-from scam_master.services.models.errors import TRANSACTION_ALREADY_EXISTS
-from scam_master.infrastructure.helpers.java_scripts import stealth_plugin
+from scam_master.infrastructure.helpers.java_scripts import apply_stealth
 from scam_master.services.models.transactions import Transaction
+from config import BrowserConfig
 
 
 class Browser:
@@ -15,27 +16,37 @@ class Browser:
 
 
 class BrowserManager:
-    def __init__(self) -> None:
+    def __init__(self, browser_config: dict) -> None:
+        self._config = BrowserConfig(browser_config)
         self._pool: dict[str, Browser] = {}
         self._pool_lock: Lock = Lock()
     
     async def start(self, transaction: Transaction, timeout: int = 350) -> Browser:
         async with self._pool_lock:
-            if self._pool.get(transaction.transaction_id):
-                raise TRANSACTION_ALREADY_EXISTS
+            if transaction.id in self._pool:
+                    self.stop(transaction.id)
         
-        browser: PyppBrowser = await launch(headless=False, defaultViewport=False, width=1920, height=1080)
+        browser: PyppBrowser = await launch(
+            executablePath=self._config.PATH,
+            headless=False,
+            defaultViewport=False,
+            width=1920,
+            height=1080,
+            dumpio=True,
+            args=['--no-sandbox', '--disable-dev-shm-usage']
+        )
         page: PyppPage = await browser.newPage()
         
-        await page.evaluateOnNewDocument(stealth_plugin)
+        await apply_stealth(page)
 
         br = Browser(transaction, page)
 
         async with self._pool_lock:
-            self._pool[transaction.transaction_id] = br
+            self._pool[transaction.id] = br
 
-        get_event_loop().call_later(timeout, create_task, self.stop(transaction.transaction_id))
+        get_event_loop().call_later(timeout, create_task, self.stop(transaction.id))
 
+        logger.info(f'Create transaction {transaction.id}')
         return br
     
     async def get(self, transaction_id: str) -> Browser | None:
@@ -45,5 +56,6 @@ class BrowserManager:
     async def stop(self, transaction_id: str) -> None:
         async with self._pool_lock:
             if transaction_id in self._pool:
+                logger.info(f'Delete transaction {transaction_id}')
                 await self._pool[transaction_id].page.browser.close()
                 del self._pool[transaction_id]
