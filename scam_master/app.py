@@ -1,5 +1,6 @@
 from config import Config, LogConfig
 from loguru import logger
+from sys import stderr
 from fastapi import FastAPI
 from starlette.exceptions import HTTPException
 from contextlib import asynccontextmanager
@@ -39,8 +40,11 @@ def create_app(config: Config):
 
 
 def _init_logger(config: LogConfig):
-    if config.TO_FILE:
-        logger.add(f'{config.LOG_DIR}/logs.log', compression='zip', rotation=f'{config.ROTATION} MB', retention=config.RETENTION, level=config.LEVEL)
+    logger.remove()
+    logger.add(stderr, level=config.LEVEL.upper())
+    
+    if config.LOG_DIR:
+        logger.add(f'{config.LOG_DIR}/logs.log', compression='zip', rotation=f'{config.ROTATION} MB', retention=config.RETENTION, level=config.LEVEL.upper())
 
 
 def _init_routes(global_api: FastAPI, config: Config):
