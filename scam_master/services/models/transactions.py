@@ -20,7 +20,7 @@ class Status(str, Enum):
 
 
 class Message(BaseModel):
-    id: Annotated[str, Field(alias='ID')]
+    id: str
     status: Status
 
 
@@ -31,7 +31,7 @@ class Card(BaseModel):
 
 
 class Transaction(BaseModel):
-    id: Annotated[str, Field(alias='ID')]
+    id: str
     sender_card: Card
     recipient_card_number: Annotated[str, Field(pattern='^\d{16}$', examples=['1111111111111111'])]
     bank_gateway: Annotated[Bank, Field(description='The bank through which the funds will be transferred')]

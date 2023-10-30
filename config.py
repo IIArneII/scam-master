@@ -37,13 +37,12 @@ class AppConfig(BaseSettings):
 
 class LogConfig(BaseSettings):
     class LogLevel(StrEnum):
-        debug = 'DEBUG'
-        info = 'INFO'
-        error = 'ERROR'
+        debug = 'debug'
+        info = 'info'
+        error = 'error'
 
     LEVEL: LogLevel = LogLevel.info
-    TO_FILE: bool = True
-    LOG_DIR: str = 'logs'
+    LOG_DIR: str = ''
     RETENTION: int = 5
     ROTATION: int = 500
 
@@ -54,11 +53,12 @@ class LogConfig(BaseSettings):
 
 
 class BrowserConfig(BaseSettings):
-    PATH: str = '/usr/bin/google-chrome-stable'
+    PATH: str = ''
     
     class Config:
         env_prefix = 'BROWSER_'
         env_file = '.env'
+
 
 class KafkaConfig(BaseSettings):
     BOOTSTRAP_SERVERS: str = 'scam_master_kafka:9092'
