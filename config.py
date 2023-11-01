@@ -82,8 +82,18 @@ class TinkoffConfig(BankConfig):
         env_file = '.env'
 
 
+class PsbankConfig(BankConfig):
+    URL: str = 'https://ib2.psbank.ru/'
+    TIMEOUT: int = 350
+        
+    class Config:
+        env_prefix = 'BANK_PSBANK_'
+        env_file = '.env'
+
+
 class BanksConfig(BaseSettings):
     tinkoff: TinkoffConfig = TinkoffConfig()
+    psbank: PsbankConfig = PsbankConfig()
 
 
 class Config(BaseSettings):

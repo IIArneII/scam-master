@@ -7,6 +7,7 @@ from enum import Enum
 
 class Bank(str, Enum):
     tinkoff = 'tinkoff'
+    psbank = 'psbank'
 
 
 class Topic(str, Enum):
