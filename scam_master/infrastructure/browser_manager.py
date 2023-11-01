@@ -34,7 +34,7 @@ class BrowserManager:
             width=1920,
             height=1080,
             dumpio=True,
-            args=['--no-sandbox', '--disable-dev-shm-usage']
+            args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-web-security', '--disable-features=IsolateOrigins,site-per-process']
         )
         page: PyppPage = await browser.newPage()
         

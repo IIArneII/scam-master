@@ -42,9 +42,9 @@ def create_app(config: Config):
 def _init_logger(config: LogConfig):
     logger.remove()
     logger.add(stderr, level=config.LEVEL.upper())
-    
-    if config.LOG_DIR:
-        logger.add(f'{config.LOG_DIR}/logs.log', compression='zip', rotation=f'{config.ROTATION} MB', retention=config.RETENTION, level=config.LEVEL.upper())
+    logger.info(config)
+    if config.DIR:
+        logger.add(f'{config.DIR}/logs.log', compression='zip', rotation=f'{config.ROTATION} MB', retention=config.RETENTION, level=config.LEVEL.upper())
 
 
 def _init_routes(global_api: FastAPI, config: Config):
