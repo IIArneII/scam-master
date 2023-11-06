@@ -42,7 +42,7 @@ class LogConfig(BaseSettings):
         error = 'error'
 
     LEVEL: LogLevel = LogLevel.info
-    LOG_DIR: str = ''
+    DIR: str = ''
     RETENTION: int = 5
     ROTATION: int = 500
 
