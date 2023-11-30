@@ -42,9 +42,9 @@ class LogConfig(BaseSettings):
         error = 'error'
 
     LEVEL: LogLevel = LogLevel.info
-    LOG_DIR: str = ''
+    DIR: str = ''
     RETENTION: int = 5
-    ROTATION: int = 500
+    ROTATION: int = 100
 
     class Config:
         env_prefix = 'LOG_'
@@ -75,15 +75,35 @@ class BankConfig(BaseSettings):
 
 class TinkoffConfig(BankConfig):
     URL: str = 'https://www.tinkoff.ru/cardtocard/'
-    TIMEOUT: int = 350
+    TIMEOUT: int = 600
         
     class Config:
         env_prefix = 'BANK_TINKOFF_'
         env_file = '.env'
 
 
+class OtpbankConfig(BankConfig):
+    URL: str = 'https://www.otpbank.ru/p2p/'
+    TIMEOUT: int = 600
+        
+    class Config:
+        env_prefix = 'BANK_OTPBANK_'
+        env_file = '.env'
+
+
+class RshbankConfig(BankConfig):
+    URL: str = 'https://old.rshb.ru/p2p/'
+    TIMEOUT: int = 600
+        
+    class Config:
+        env_prefix = 'BANK_RSHBANK'
+        env_file = '.env'
+
+
 class BanksConfig(BaseSettings):
     tinkoff: TinkoffConfig = TinkoffConfig()
+    otp: OtpbankConfig = OtpbankConfig()
+    rsh: RshbankConfig = RshbankConfig()
 
 
 class Config(BaseSettings):
