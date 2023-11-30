@@ -1,131 +1,49 @@
-from pyppeteer.page import Page as PyppPage
+from selenium.webdriver import Chrome as Driver
 
-stealth_plugin = '''
-    () => {
-        // Pass the Webdriver test
-        Object.defineProperty(navigator, "webdriver", {
-            get: () => false,
-        });
+from selenium_stealth.chrome_app import chrome_app
+from selenium_stealth.chrome_runtime import chrome_runtime
+from selenium_stealth.iframe_content_window import iframe_content_window
+from selenium_stealth.media_codecs import media_codecs
+from selenium_stealth.navigator_languages import navigator_languages
+from selenium_stealth.navigator_permissions import navigator_permissions
+from selenium_stealth.navigator_plugins import navigator_plugins
+from selenium_stealth.navigator_vendor import navigator_vendor
+from selenium_stealth.navigator_webdriver import navigator_webdriver
+from selenium_stealth.user_agent_override import user_agent_override
+from selenium_stealth.utils import with_utils
+from selenium_stealth.webgl_vendor import webgl_vendor_override
+from selenium_stealth.window_outerdimensions import window_outerdimensions
+from selenium_stealth.hairline_fix import hairline_fix
 
-        // Pass the Chrome Test
-        window.navigator.chrome = {
-            runtime: {},
-        };
 
-        // Add permissions
-        const originalQuery = window.navigator.permissions.query;
-        return window.navigator.permissions.query = (parameters) => (
-            parameters.name === "notifications" ?
-            Promise.resolve({ state: Notification.permission }) :
-            originalQuery(parameters)
-        );
+def selenium_stealth(
+        driver: Driver,
+        languages: [str] = ["en-US", "en"],
+        vendor: str = "Google Inc.",
+        webgl_vendor: str = "Intel Inc.",
+        renderer: str = "Intel Iris OpenGL Engine",
+        fix_hairline: bool = False,
+        run_on_insecure_origins: bool = False, **kwargs) -> None:
+    if not isinstance(driver, Driver):
+        raise ValueError("driver must is selenium.webdriver.Chrome, currently this lib only support Chrome")
 
-        // Pass the plugins length check
-        Object.defineProperty(navigator, "plugins", {
-            get: () => [1, 2, 3, 4, 5],
-        });
+    ua_languages = ','.join(languages)
 
-        // Pass the languages check
-        Object.defineProperty(navigator, "languages", {
-            get: () => ["en-US", "en"],
-        });
-    }
-'''
+    with_utils(driver, **kwargs)
+    chrome_app(driver, **kwargs)
+    chrome_runtime(driver, run_on_insecure_origins, **kwargs)
+    iframe_content_window(driver, **kwargs)
+    media_codecs(driver, **kwargs)
+    navigator_languages(driver, languages, **kwargs)
+    navigator_permissions(driver, **kwargs)
+    navigator_plugins(driver, **kwargs)
+    navigator_vendor(driver, vendor, **kwargs)
+    navigator_webdriver(driver, **kwargs)
+    # \/ Throws an exception \/
+    # user_agent_override(driver, user_agent, ua_languages, platform, **kwargs)
+    # /\ Throws an exception /\
+    webgl_vendor_override(driver, webgl_vendor, renderer, **kwargs)
+    window_outerdimensions(driver, **kwargs)
 
-async def apply_stealth(page: PyppPage):
-    # Pass the User-Agent Test
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
-
-    # Pass the Webdriver Test
-    await page.evaluateOnNewDocument('() => { Object.defineProperty(navigator, "webdriver", { get: () => undefined }) }')
-
-    # Pass the Chrome Test
-    await page.evaluateOnNewDocument('() => { window.navigator.chrome = { runtime: {}, }; }')
-
-    # Pass the Permissions Test
-    await page.evaluateOnNewDocument('() => { const originalQuery = window.navigator.permissions.query; return window.navigator.permissions.query = (parameters) => (parameters.name === "notifications" ? Promise.resolve({ state: Notification.permission }) : originalQuery(parameters)); }')
-
-    # Pass the Plugins Length Test
-    await page.evaluateOnNewDocument('() => { Object.defineProperty(navigator, "plugins", { get: () => [1, 2, 3, 4, 5], }); }')
-
-    # Pass the Languages Test
-    await page.evaluateOnNewDocument('() => { Object.defineProperty(navigator, "languages", { get: () => ["en-US", "en"], }); }')
-    
-    await page.evaluateOnNewDocument('''() => {
-        let pluginData = [
-            { name: "Chrome PDF Plugin", filename: "internal-pdf-viewer" },
-            { name: "Chrome PDF Viewer", filename: "mhjfbmdgcfjbbpaeojofohoefgiehjai" },
-            { name: "Native Client", filename: "internal-nacl-plugin" }
-        ];
-        Object.defineProperty(navigator, "plugins", {
-            get: () => pluginData,
-        });
-    }''')
-
-    # Pass the iframe Test
-    await page.evaluateOnNewDocument('''() => {
-        Object.defineProperty(HTMLIFrameElement.prototype, "contentWindow", {
-            get: function() {
-                return window;
-            }
-        });
-    }''')
-
-    # Pass toString test, though it breaks JS functionalities, use with caution
-    await page.evaluateOnNewDocument('''() => {
-        window.navigator.chrome = { runtime: {} };
-        const originalQuery = window.navigator.permissions.query;
-        window.navigator.permissions.query = (parameters) => (
-            parameters.name === 'notifications'
-                ? Promise.resolve({ state: Notification.permission })
-                : originalQuery(parameters)
-        );
-        const getParameter = WebGLRenderingContext.getParameter;
-        WebGLRenderingContext.prototype.getParameter = function(parameter) {
-            if (parameter === 37445) {
-                return 'NVIDIA Corporation';
-            }
-            if (parameter === 37446) {
-                return 'NVIDIA GeForce GTX 1050 Ti with Max-Q Design/PCIe/SSE2';
-            }
-            return getParameter(parameter);
-        };
-    }''')
-
-    # Mocking WebGL vendor and renderer
-    await page.evaluateOnNewDocument('''() => {
-        const getParameter = WebGLRenderingContext.getParameter;
-        WebGLRenderingContext.prototype.getParameter = function(parameter) {
-            // UNMASKED_VENDOR_WEBGL
-            if (parameter === 37445) {
-                return 'NVIDIA Corporation';
-            }
-            // UNMASKED_RENDERER_WEBGL
-            if (parameter === 37446) {
-                return 'NVIDIA GeForce GTX 1050 Ti with Max-Q Design/PCIe/SSE2';
-            }
-            return getParameter(parameter);
-        };
-    }''')
-
-    # Mocking battery status API
-    await page.evaluateOnNewDocument('''() => {
-        const getBattery = Navigator.prototype.getBattery;
-        Navigator.prototype.getBattery = async () => {
-            const battery = await getBattery.call(navigator);
-            return Object.defineProperties(battery, {
-                chargingTime: {
-                    get: () => Infinity,
-                },
-                dischargingTime: {
-                    get: () => Infinity,
-                },
-                level: {
-                    get: () => 0.5,
-                },
-                charging: {
-                    get: () => true,
-                },
-            });
-        };
-    }''')
+    if fix_hairline:
+        hairline_fix(driver, **kwargs)

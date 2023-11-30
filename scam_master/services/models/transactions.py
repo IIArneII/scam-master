@@ -7,21 +7,38 @@ from enum import Enum
 
 class Bank(str, Enum):
     tinkoff = 'tinkoff'
+    otp = 'otp'
+    sber = 'sber'
+    rsh = 'rsh'
+
+
+class Driver(str, Enum):
+    pyppeteer = 'pyppeteer'
+    selenium = 'selenium'
 
 
 class Topic(str, Enum):
     transactions_status_changed = 'transactions.status.changed'
 
 
-class Status(str, Enum):
+class KafkaStatus(str, Enum):
     in_progress = 'in_progress'
     confirmed = 'confirmed'
     failed = 'failed'
 
 
+class TransactionStatus(str, Enum):
+    browser_creation = 'browser_creation'
+    filling_out_form = 'filling_out_form'
+    confirmation_check = 'confirmation_check'
+    waiting_for_code = 'waiting_for_code'
+    entering_code = 'entering_code'
+    transfer_check = 'transfer_check'
+
+
 class Message(BaseModel):
     id: str
-    status: Status
+    status: KafkaStatus
 
 
 class Card(BaseModel):

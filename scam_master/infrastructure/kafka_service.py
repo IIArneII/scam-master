@@ -16,8 +16,9 @@ class KafkaService:
     
     async def send_message(self, topic: Topic, message: Message) -> None:
         try:
-            logger.info(f'Send message in kafka | Topic: {topic} | Message: {message}')
-            await self._producer.send('transactions.status.changed', message.model_dump_json(by_alias=True).encode())
+            m = message.model_dump_json()
+            logger.info(f'Send message in kafka | topic={topic} | message="{m}"')
+            await self._producer.send('transactions.status.changed', m.encode())
         
         except Exception as e:
             logger.error(e)
