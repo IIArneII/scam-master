@@ -2,9 +2,9 @@ from loguru import logger
 
 from scam_master.infrastructure.browser_manager import BrowserManager
 from scam_master.infrastructure.kafka_service import KafkaService
-from scam_master.services.models.transactions import Transaction, ConfirmTransaction, Message, Topic, Status
+from scam_master.services.models.transactions import Transaction, ConfirmTransaction, Message, Topic, KafkaStatus, TransactionStatus
 from scam_master.services.models.errors import BadRequestError, NotFoundError, BankError
-from scam_master.services.helpers.banks import get_bank_transfer, get_bank_config
+from scam_master.services.helpers.banks import get_bank_transfer, get_bank_config, get_bank_driver
 from config import BanksConfig
 
 
@@ -21,33 +21,36 @@ class TransactionsService:
                 raise BadRequestError(f'Transaction {model.id} already exists')
 
             config = get_bank_config(self._banks_config, model.bank_gateway)
-            get_bank_transfer(model.sender_bank)
-            transfer = get_bank_transfer(model.bank_gateway)
+            sender = get_bank_transfer(model.sender_bank)
+            gateway = get_bank_transfer(model.bank_gateway)
+            driver = get_bank_driver(model.bank_gateway)
 
-            logger.info('Browser creation...')
-            browser = await self._browser_manager.start(model, config.TIMEOUT)
+            browser = await self._browser_manager.start(model, driver, config.TIMEOUT)
 
-            logger.info('Filling out the transfer form...')
-            await transfer.fill_out_transfer_form(browser.page, config.URL, model.sender_card, model.recipient_card_number, model.amount)
-            
-            logger.info('Waiting for confirmation code to be entered...')
+            browser.set_status(TransactionStatus.filling_out_form)
+            await gateway.fill_out_transfer_form(browser.page, config.URL, model.sender_card, model.recipient_card_number, model.amount)
+
+            browser.set_status(TransactionStatus.confirmation_check)
+            await sender.check_confirm_transfer(browser.page)
+
+            browser.set_status(TransactionStatus.waiting_for_code)
 
             await self._kafka_service.send_message(
                 Topic.transactions_status_changed,
-                Message(id=model.id, status=Status.in_progress)
+                Message(id=model.id, status=KafkaStatus.in_progress)
             )
 
         except BadRequestError as e:
             logger.info(e)
             await self._kafka_service.send_message(
                 Topic.transactions_status_changed,
-                Message(id=model.id, status=Status.failed)
+                Message(id=model.id, status=KafkaStatus.failed)
             )
         
         except BankError:
             await self._kafka_service.send_message(
                 Topic.transactions_status_changed,
-                Message(id=model.id, status=Status.failed)
+                Message(id=model.id, status=KafkaStatus.failed)
             )
             await self._browser_manager.stop(model.id)
 
@@ -55,7 +58,7 @@ class TransactionsService:
             logger.exception(e)
             await self._kafka_service.send_message(
                 Topic.transactions_status_changed,
-                Message(id=model.id, status=Status.failed)
+                Message(id=model.id, status=KafkaStatus.failed)
             )
             await self._browser_manager.stop(model.id)
 
@@ -64,16 +67,20 @@ class TransactionsService:
         try:
             browser = await self._browser_manager.get(model.id)
             if not browser:
-                raise NotFoundError(f'Transaction {model.id} not found')
+                raise NotFoundError(f'Transaction not found | id={model.id}')
 
-            transfer = get_bank_transfer(browser.transaction.sender_bank)
+            sender = get_bank_transfer(browser.transaction.sender_bank)
+            gateway = get_bank_transfer(browser.transaction.bank_gateway)
 
-            logger.info('Confirmation of transfer...')
-            await transfer.confirm_transfer(browser.page, model.confirmation_code)
+            browser.set_status(TransactionStatus.entering_code)
+            await sender.confirm_transfer(browser.page, model.confirmation_code)
+
+            browser.set_status(TransactionStatus.transfer_check)
+            await gateway.check_transfer_status(browser.page)
             
             await self._kafka_service.send_message(
                 Topic.transactions_status_changed,
-                Message(id=model.id, status=Status.confirmed)
+                Message(id=model.id, status=KafkaStatus.confirmed)
             )
             await self._browser_manager.stop(model.id)
         
@@ -81,13 +88,13 @@ class TransactionsService:
             logger.info(e)
             await self._kafka_service.send_message(
                 Topic.transactions_status_changed,
-                Message(id=model.id, status=Status.failed)
+                Message(id=model.id, status=KafkaStatus.failed)
             )
         
         except BankError:
             await self._kafka_service.send_message(
                 Topic.transactions_status_changed,
-                Message(id=model.id, status=Status.failed)
+                Message(id=model.id, status=KafkaStatus.failed)
             )
             await self._browser_manager.stop(model.id)
         
@@ -95,6 +102,6 @@ class TransactionsService:
             logger.exception(e)
             await self._kafka_service.send_message(
                 Topic.transactions_status_changed,
-                Message(id=model.id, status=Status.failed)
+                Message(id=model.id, status=KafkaStatus.failed)
             )
             await self._browser_manager.stop(model.id)

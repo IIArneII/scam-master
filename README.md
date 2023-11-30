@@ -1,6 +1,7 @@
-# scam-master
+# Scam master
 
 Bank transfer system.
+Bank transfer service written in `Python 3.10.11`. Uses the pyppeteer and selenium library to make card-to-card transfers through bank websites. The translation is initialized through the API interface, the translation status is returned through the Kafka broker.
 
 ------------
 
@@ -18,6 +19,16 @@ Bank transfer system.
 ------------
 ## OpenAPI
 The openAPI specification can be viewed by following the path `host:port/api/v1/openapi`
+
+------------
+## Supported banks
+- Issuers (senders):
+	- Sber Bank
+	- Tinkoff
+- Acquirers (gateways):
+	- Tinkoff
+	- Otp Bank
+	- Russian Agricultural Bank
 
 ------------
 ## Kafka

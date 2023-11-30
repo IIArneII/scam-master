@@ -39,8 +39,6 @@ services:
       - scam_master_kafka
     environment:
       KAFKA_BOOTSTRAP_SERVERS: scam_master_kafka:9092
-      BANK_TINKOFF_URL: ${SCAM_MASTER_BANK_TINKOFF_URL:-"https://www.tinkoff.ru/cardtocard/"}
-      BANK_TINKOFF_TIMEOUT: ${SCAM_MASTER_BANK_TINKOFF_TIMEOUT:-350}
     volumes:
       - "${SCAM_MASTER_LOG_DIR:-./logs}:/app/logs"
     ports:

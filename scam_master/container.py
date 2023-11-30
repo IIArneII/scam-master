@@ -15,8 +15,8 @@ class Container(DeclarativeContainer):
         '.controllers.helpers.services_providers',
     ])
 
-    browser_manager: Type[BrowserManager] = Singleton(BrowserManager, browser_config=config.browser)
     kafka_service: Type[KafkaService] = Singleton(KafkaService, kafka_config=config.kafka)
+    browser_manager: Type[BrowserManager] = Singleton(BrowserManager, browser_config=config.browser, kafka_service=kafka_service)
 
     transactions_service: Type[TransactionsService] = Factory(
         TransactionsService,
